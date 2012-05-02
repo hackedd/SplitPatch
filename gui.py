@@ -16,6 +16,7 @@ def show_error(message):
 		gtk.BUTTONS_OK, message)
 	dialog.format_secondary_text(format_exc())
 	dialog.run()
+	dialog.destroy()
 
 GTK_ROOT_PATH = "0"
 
