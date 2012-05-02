@@ -39,8 +39,7 @@ def show_patchset(svn, patchset):
 	for filename, patch in patchset.iteritems():
 		select_hunks(patch)
 
-	for filename, patch in patchset.iteritems():
-		patch.write()
+	patchset.write()
 
 def show_error(message):
 	from traceback import print_exc

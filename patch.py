@@ -82,6 +82,10 @@ class PatchSet:
 	def iteritems(self):
 		return self.patches.iteritems()
 
+	def write(self, fp = sys.stdout):
+		for filename, patch in self.iteritems():
+			patch.write(fp)
+
 class Patch:
 	def __init__(self, filename):
 		self.filename = filename
