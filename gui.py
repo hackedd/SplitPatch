@@ -122,6 +122,10 @@ class PatchSetWindow(gtk.Window):
 		self._include.connect("clicked", self.on_include_toggled)
 		bbox.pack_start(self._include)
 
+		save = gtk.Button("Save Patch")
+		save.connect("clicked", self.on_save_clicked)
+		bbox.pack_end(save)
+
 		scrolledWindow = gtk.ScrolledWindow()
 		scrolledWindow.set_shadow_type(gtk.SHADOW_IN)
 		vbox.pack_start(scrolledWindow, expand = True)
@@ -234,6 +238,25 @@ class PatchSetWindow(gtk.Window):
 				if self._treeStore[childIter][self.OBJECT] == self._current:
 					self._include.set_active(include)
 				childIter = self._treeStore.iter_next(childIter)
+
+	def on_save_clicked(self, widget):
+		dialog = gtk.FileChooserDialog("Save Patch", self, gtk.FILE_CHOOSER_ACTION_SAVE,
+			(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT, gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+		if dialog.run() != gtk.RESPONSE_ACCEPT:
+			dialog.destroy()
+			return
+		filename = dialog.get_filename()
+		dialog.destroy()
+
+		try:
+			with open(filename, "wb") as fp:
+				self.patchset.write(fp)
+			dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_INFO,
+				gtk.BUTTONS_OK, "Patches written to '%s'" % filename)
+			dialog.run()
+			dialog.destroy()
+		except:
+			show_error("Unable to write patches to '%s'" % filename)
 
 def _commonprefix(items):
 	"Given a list of lists, returns the longest common prefix"
