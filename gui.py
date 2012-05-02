@@ -159,19 +159,25 @@ class PatchSetWindow(gtk.Window):
 		if paths:
 			self._currentPath = paths[0]
 			row = self._treeStore[self._currentPath]
-			if isinstance(row[self.OBJECT], Hunk):
-				self.load_hunk(row[self.OBJECT])
-			else:
-				self.load_hunk(None)
+			self.load_hunk(row[self.OBJECT])
 		else:
 			self.load_hunk(None)
 
 	def load_hunk(self, hunk):
 		self._buffer.begin_not_undoable_action()
-		if hunk:
+
+		if isinstance(hunk, Hunk):
 			self._buffer.set_text("\n".join([hunk.lineInfo] + hunk.lines))
+		elif isinstance(hunk, Patch):
+			patchLines = []
+			patch = hunk
+			for hunk in patch.hunks:
+				patchLines.append(hunk.lineInfo + (" Included" if hunk.include else ""))
+				patchLines += hunk.lines
+			self._buffer.set_text("\n".join(patchLines))
 		else:
 			self._buffer.set_text("")
+
 		self._buffer.end_not_undoable_action()
 		self._buffer.place_cursor(self._buffer.get_start_iter())
 
