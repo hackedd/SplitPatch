@@ -66,7 +66,7 @@ class PatchSetWindow(gtk.Window):
 					childIter = self._treeStore.iter_next(childIter)
 				else:
 					# parent record not found, create it now
-					childIter = self._treeStore.append(parentIter, (component, None, False, False))
+					parentIter = self._treeStore.append(parentIter, (component, None, False, False))
 
 			patchIter = self._treeStore.append(parentIter, (filename, patch, True, True))
 			for i, hunk in enumerate(patch.hunks):
