@@ -59,7 +59,7 @@ class PatchSetWindow(gtk.Window):
 			for component in path:
 				childIter = self._treeStore.iter_children(parentIter)
 				while childIter != None:
-					if self._treeStore[childIter][self.NAME] == component:
+					if self._treeStore[childIter][self.LABEL] == component:
 						# name matches, continue with next component
 						parentIter = childIter
 						break
