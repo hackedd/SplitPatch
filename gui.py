@@ -50,7 +50,7 @@ class PatchSetWindow(gtk.Window):
 		# insert root record
 		rootIter = self._treeStore.append(None, ("/".join(root), None, False, False))
 
-		for filename, patch in self.patchset.iteritems():
+		for filename, patch in sorted(self.patchset.iteritems()):
 			components = filename.split("/")
 			path, filename = components[rootLen:-1], components[-1]
 
