@@ -5,8 +5,8 @@ import gtksourceview2
 
 from patch import Patch, Hunk
 
-def show_patchset(svn, patchset):
-	window = PatchSetWindow(svn, patchset)
+def show_patchset(svn, input, patchset):
+	window = PatchSetWindow(svn, input, patchset)
 	window.run()
 
 def show_error(message):

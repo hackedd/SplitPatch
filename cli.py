@@ -35,7 +35,7 @@ def select_hunks(patch):
 			if include == None: raise SystemExit()
 			if include == "no": hunk.include = False
 
-def show_patchset(svn, patchset):
+def show_patchset(svn, input, patchset):
 	for filename, patch in patchset.iteritems():
 		select_hunks(patch)
 

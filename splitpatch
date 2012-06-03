@@ -60,8 +60,12 @@ def main():
 		interface.show_error("Unable to read patchset from '%s'" % args.input)
 		sys.exit(1)
 
+	if not len(patchset):
+		interface.show_error("The patchset '%s' does not contain any patches" % args.input)
+		sys.exit(1)
+
 	try:
-		interface.show_patchset(svn, patchset)
+		interface.show_patchset(svn, args.input, patchset)
 	except Exception:
 		interface.show_error("Unable to display patchset from '%s'" % args.input)
 		sys.exit(1)

@@ -79,6 +79,9 @@ class PatchSet:
 
 				patch.append(hunk)
 
+	def __len__(self):
+		return len(self.patches)
+
 	def iteritems(self):
 		return self.patches.iteritems()
 
