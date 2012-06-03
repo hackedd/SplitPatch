@@ -89,6 +89,10 @@ class PatchSet:
 		for filename, patch in self.iteritems():
 			patch.write(fp)
 
+	def write_excluded(self, fp = sys.stdout):
+		for filename, patch in self.iteritems():
+			patch.write_excluded(fp)
+
 class Patch:
 	def __init__(self, filename):
 		self.filename = filename
@@ -102,16 +106,22 @@ class Patch:
 		return len(self.hunks)
 
 	def write(self, fp = sys.stdout):
-		included = filter(lambda h: h.include, self.hunks)
-		if len(included) == 0:
-			return
+		hunks = filter(lambda h: h.include, self.hunks)
+		self._write(fp, hunks)
+
+	def write_excluded(self, fp = sys.stdout):
+		hunks = filter(lambda h: not h.include, self.hunks)
+		self._write(fp, hunks)
+
+	def _write(self, fp, hunks):
+		if len(hunks) == 0: return
 
 		print >>fp, "Index: %s" % self.filename
 		print >>fp, "=" * 67
 		print >>fp, "--- %s" % self.filename
 		print >>fp, "+++ %s" % self.filename
 
-		for hunk in self.hunks:
+		for hunk in hunks:
 			# TODO: re-calculate lineInfo offsets
 			print >>fp, hunk.lineInfo
 			print >>fp, "\n".join(hunk.lines)

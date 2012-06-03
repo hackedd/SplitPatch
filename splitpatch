@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 from subprocess import Popen, PIPE
 
 from patch import PatchSet
+from svn import get_svn_diff
 
 def detect_gui():
 	# TODO: Implement actual logic
@@ -24,14 +25,6 @@ def get_patchset(input):
 		raise Exception("'%s' is neither a Patch file nor a directory" % input)
 
 	return True, get_svn_diff(input)
-
-def get_svn_diff(input):
-	diff = Popen(["svn", "diff", input], stdout = PIPE, stderr = PIPE)
-	output, errors = diff.communicate()
-	if diff.returncode:
-		print >>sys.stderr, errors
-		raise Exception("svn diff exited with code %d" % diff.returncode)
-	return PatchSet(output)
 
 def main():
 	parser = ArgumentParser(description = "Split a Patch")

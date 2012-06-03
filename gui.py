@@ -3,9 +3,14 @@ import pango
 import gobject
 import gtksourceview2
 
+from threading import Thread
+
 from patch import Patch, Hunk
+from svn import do_partial_commit
 
 def show_patchset(svn, input, patchset):
+	gtk.threads_init()
+
 	window = PatchSetWindow(svn, input, patchset)
 	window.run()
 
@@ -14,7 +19,11 @@ def show_error(message):
 
 	dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR,
 		gtk.BUTTONS_OK, message)
-	dialog.format_secondary_text(format_exc())
+	
+	exception = format_exc()
+	if exception:
+		dialog.format_secondary_text()
+	
 	dialog.run()
 	dialog.destroy()
 
@@ -23,13 +32,14 @@ GTK_ROOT_PATH = "0"
 class PatchSetWindow(gtk.Window):
 	LABEL, OBJECT, INCLUDE, CHECK_VISIBLE = range(4)
 
-	def __init__(self, svn, patchset):
+	def __init__(self, svn, input, patchset):
 		gtk.Window.__init__(self)
 
 		self.svn = svn
+		self.input = input
 		self.patchset = patchset
 
-		self.set_size_request(600, 400)
+		self.set_size_request(750, 550)
 		self.set_title("SplitPatch")
 		self.connect("delete_event", self.on_delete_event)
 		self.connect("destroy", self.on_destroy)
@@ -125,6 +135,11 @@ class PatchSetWindow(gtk.Window):
 		save = gtk.Button("Save Patch")
 		save.connect("clicked", self.on_save_clicked)
 		bbox.pack_end(save)
+
+		commit = gtk.Button("Commit")
+		commit.connect("clicked", self.on_commit_clicked)
+		commit.set_sensitive(self.svn)
+		bbox.pack_end(commit)
 
 		scrolledWindow = gtk.ScrolledWindow()
 		scrolledWindow.set_shadow_type(gtk.SHADOW_IN)
@@ -263,6 +278,84 @@ class PatchSetWindow(gtk.Window):
 			dialog.destroy()
 		except:
 			show_error("Unable to write patches to '%s'" % filename)
+
+	def on_commit_clicked(self, widget):
+		dialog = CommitDialog(self, self.input, self.patchset)
+		response = dialog.run()
+		print "CommitDialog:", response
+		dialog.destroy()
+
+class CommitDialog(gtk.Dialog):
+	def __init__(self, parent, wc, patchset):
+		gtk.Dialog.__init__(self)
+
+		self.wc = wc
+		self.patchset = patchset
+
+		self.set_title("SVN Commit - %s" % wc)
+		self.set_size_request(500, 200)
+
+		self._create_layout()
+
+	def _create_layout(self):
+		self.vbox.pack_start(gtk.Label("Commit Message"), expand = False)
+
+		self._message = gtk.TextView(gtk.TextBuffer())
+		self._message.modify_font(pango.FontDescription("monospace 10"))
+		self.vbox.pack_start(self._message)
+
+		self._status = gtk.Label()
+		self.vbox.pack_start(self._status, expand = False)
+
+		self._ok = gtk.Button("Commit")
+		self._ok.connect("clicked", self.on_ok_clicked)
+		self.action_area.pack_start(self._ok)
+
+		self._cancel = gtk.Button("Cancel")
+		self._cancel.connect("clicked", self.on_cancel_clicked)
+		self.action_area.pack_start(self._cancel)
+
+		self.show_all()
+
+	def on_ok_clicked(self, widget):
+		buf = self._message.get_buffer()
+		message = buf.get_text(buf.get_start_iter(), buf.get_end_iter())
+
+		if not message:
+			dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION,
+				gtk.BUTTONS_YES_NO, "You did not specify a log message. Continue anyway?")
+			response = dialog.run()
+			dialog.destroy()
+			if response != gtk.RESPONSE_YES: return
+
+		self._ok.set_sensitive(False)
+		self._cancel.set_sensitive(False)
+		self._message.set_sensitive(False)
+
+		thread = Thread(target = do_partial_commit, 
+			args = (self.wc, self.patchset, message, self.on_commit_progess))
+		thread.start()
+
+	def on_commit_progess(self, message, done):
+		gtk.threads_enter()
+		
+		try:
+			self._status.set_text(str(message))
+
+			import sys
+			print >>sys.stderr, "Done: ", done
+
+			if done:
+				if isinstance(message, Exception):
+					show_error("Error while comitting changes.")
+					self.response(gtk.RESPONSE_REJECT)
+				else:
+					self.response(gtk.RESPONSE_ACCEPT)
+		finally:
+			gtk.threads_leave()
+
+	def on_cancel_clicked(self, widget):
+		self.response(gtk.RESPONSE_REJECT)
 
 def _commonprefix(items):
 	"Given a list of lists, returns the longest common prefix"
