@@ -5,6 +5,7 @@ import gtksourceview2
 
 from threading import Thread
 
+from main import get_patchset
 from patch import Patch, Hunk
 from svn import do_partial_commit
 
@@ -19,11 +20,11 @@ def show_error(message):
 
 	dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR,
 		gtk.BUTTONS_OK, message)
-	
+
 	exception = format_exc()
 	if exception:
 		dialog.format_secondary_text()
-	
+
 	dialog.run()
 	dialog.destroy()
 
@@ -131,6 +132,10 @@ class PatchSetWindow(gtk.Window):
 		self._include = gtk.CheckButton("Include")
 		self._include.connect("clicked", self.on_include_toggled)
 		bbox.pack_start(self._include)
+
+		reload_ = gtk.Button("Reload")
+		reload_.connect("clicked", self.on_reload_clicked)
+		bbox.pack_end(reload_)
 
 		save = gtk.Button("Save Patch")
 		save.connect("clicked", self.on_save_clicked)
@@ -279,11 +284,20 @@ class PatchSetWindow(gtk.Window):
 		except:
 			show_error("Unable to write patches to '%s'" % filename)
 
+	def on_reload_clicked(self, widget = None):
+		self.svn, self.patchset = get_patchset(self.input)
+		self._treeStore.clear()
+		self._fill_tree()
+
 	def on_commit_clicked(self, widget):
+		if not self.patchset.included_iteritems():
+			show_error("There are no patches to commit.")
+			return
+
 		dialog = CommitDialog(self, self.input, self.patchset)
 		response = dialog.run()
-		print "CommitDialog:", response
 		dialog.destroy()
+		self.on_reload_clicked()
 
 class CommitDialog(gtk.Dialog):
 	def __init__(self, parent, wc, patchset):
@@ -332,13 +346,13 @@ class CommitDialog(gtk.Dialog):
 		self._cancel.set_sensitive(False)
 		self._message.set_sensitive(False)
 
-		thread = Thread(target = do_partial_commit, 
+		thread = Thread(target = do_partial_commit,
 			args = (self.wc, self.patchset, message, self.on_commit_progess))
 		thread.start()
 
 	def on_commit_progess(self, message, done):
 		gtk.threads_enter()
-		
+
 		try:
 			self._status.set_text(str(message))
 

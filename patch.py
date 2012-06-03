@@ -85,6 +85,13 @@ class PatchSet:
 	def iteritems(self):
 		return self.patches.iteritems()
 
+	def included_iteritems(self):
+		items = []
+		for filename, patch in self.iteritems():
+			if patch.get_included():
+				items.append((filename, patch))
+		return items
+
 	def write(self, fp = sys.stdout):
 		for filename, patch in self.iteritems():
 			patch.write(fp)
@@ -105,13 +112,17 @@ class Patch:
 	def __len__(self):
 		return len(self.hunks)
 
+	def get_included(self):
+		return filter(lambda h: h.include, self.hunks)
+
+	def get_excluded(self):
+		return filter(lambda h: not h.include, self.hunks)
+
 	def write(self, fp = sys.stdout):
-		hunks = filter(lambda h: h.include, self.hunks)
-		self._write(fp, hunks)
+		self._write(fp, self.get_included())
 
 	def write_excluded(self, fp = sys.stdout):
-		hunks = filter(lambda h: not h.include, self.hunks)
-		self._write(fp, hunks)
+		self._write(fp, self.get_excluded())
 
 	def _write(self, fp, hunks):
 		if len(hunks) == 0: return
