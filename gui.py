@@ -347,17 +347,14 @@ class CommitDialog(gtk.Dialog):
 		self._message.set_sensitive(False)
 
 		thread = Thread(target = do_partial_commit,
-			args = (self.wc, self.patchset, message, self.on_commit_progess))
+			args = (self.wc, self.patchset, message, self.on_commit_progress))
 		thread.start()
 
-	def on_commit_progess(self, message, done):
+	def on_commit_progress(self, message, done):
 		gtk.threads_enter()
 
 		try:
 			self._status.set_text(str(message))
-
-			import sys
-			print >>sys.stderr, "Done: ", done
 
 			if done:
 				if isinstance(message, Exception):
