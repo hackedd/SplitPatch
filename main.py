@@ -6,8 +6,17 @@ from patch import PatchSet
 from svn import get_svn_diff
 
 def detect_gui():
-	# TODO: Implement actual logic
-	return False
+	"""
+	On Windows: returns True
+	On Linux: returns True if sys.stdout is not connected to a TTY
+	Else: return False
+	"""
+	if sys.platform.startswith("win"):
+		return True
+	elif sys.platform.startswith("linux"):
+		return not os.isatty(sys.stdout.fileno())
+	else:
+		return False
 
 def get_patchset(input):
 	if input == "-":
